@@ -1,7 +1,13 @@
 use cgmath::{InnerSpace, Matrix3, Rad, vec2, vec3};
-use glium::winit::{
-    event::KeyEvent,
-    keyboard::{Key, NamedKey},
+use glium::{
+    Display,
+    glutin::surface::WindowSurface,
+    winit::{
+        dpi::{LogicalPosition, PhysicalSize},
+        event::{ElementState, KeyEvent},
+        keyboard::{Key, NamedKey},
+        window::Window,
+    },
 };
 
 pub fn handle_key_evnet(
@@ -9,6 +15,9 @@ pub fn handle_key_evnet(
     cam_pos: &mut [f32; 3],
     cam_rotation: &mut [f32; 2],
     cam_front: &[f32; 3],
+    window: &mut Window,
+    display: &mut Display<WindowSurface>,
+    is_borderles: &mut bool,
 ) {
     const MOVE_SPEED: f32 = 10.0;
     const ROTATION_SPEED: f32 = 3.751;
@@ -43,6 +52,24 @@ pub fn handle_key_evnet(
             NamedKey::F12 => {
                 panic!("F12 pressed. Process stopped");
             }
+            NamedKey::F11 => match event.state {
+                ElementState::Pressed => {
+                    dbg!();
+                    if *is_borderles == true {
+                        window.set_decorations(false);
+                        let _ = window.request_inner_size(PhysicalSize::new(1920, 1080));
+                        window.set_outer_position(LogicalPosition::new(0.0, 0.0));
+                        display.resize((1920, 1080));
+                        *is_borderles = !*is_borderles;
+                    } else {
+                        window.set_decorations(true);
+                        let _ = window.request_inner_size(PhysicalSize::new(1280, 720));
+                        display.resize((1280, 720));
+                        *is_borderles = !*is_borderles;
+                    }
+                }
+                _ => (),
+            },
             _ => {}
         },
         Key::Character(c) => match c.as_str() {

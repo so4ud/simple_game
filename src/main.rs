@@ -1,12 +1,10 @@
 use image::{self, io};
 use std::{hint, io::Cursor, thread::sleep, time::Duration};
 
-use crate::{
-    cube::make_cube, keypress_handler::handle_key_evnet, readraw_handler::handle_redraw_request,
-};
+use crate::{cube::make_cube, keypress_handler::handle_key_evnet, redraw_hendler::render_ui};
 use cgmath::{
     self, Matrix, Matrix3, Matrix4, Point3, Rad, SquareMatrix, Vector3, Vector4, frustum,
-    num_traits::Float, perspective, vec4,
+    num_traits::Float, ortho, perspective, vec4,
 };
 use glium::{
     self, Surface, Texture2d, VertexBuffer, implement_vertex, index, uniform,
@@ -16,13 +14,30 @@ use glium::{
         dpi::PhysicalPosition,
         event::{self, DeviceEvent, KeyEvent},
         keyboard::{Key, NamedKey},
+        platform::pump_events::EventLoopExtPumpEvents,
         window,
     },
 };
 // use crate::cube::make_cube;
 mod cube;
 mod keypress_handler;
-mod readraw_handler;
+mod redraw_hendler;
+#[derive(Debug, Copy, Clone)]
+struct UiVertex {
+    position: [f32; 3],
+    color: [f32; 3],
+    uv: [f32; 2],
+}
+implement_vertex!(UiVertex, position, color, uv);
+impl UiVertex {
+    fn new(position: [f32; 3], color: [f32; 3], uv: [f32; 2]) -> Self {
+        Self {
+            position,
+            color,
+            uv,
+        }
+    }
+}
 
 #[derive(Debug, Copy, Clone)]
 struct Vertex {
@@ -46,15 +61,14 @@ fn main() {
     let event_loop = glium::winit::event_loop::EventLoop::builder()
         .build()
         .expect("event loop building");
-    let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new()
+    let (mut window, mut display) = glium::backend::glutin::SimpleWindowBuilder::new()
         .with_title("kys >_<")
         .with_inner_size(1280, 720)
         .build(&event_loop);
+    window.set_resizable(true);
 
     // We've changed our shape to a rectangle so the image isn't distorted.
     let (shape, indeces) = make_cube(0.2);
-
-    // let (shape, indecies) = make_cube(0.5);
 
     let indeces =
         glium::index::IndexBuffer::dynamic(&display, index::PrimitiveType::TrianglesList, &indeces)
@@ -64,6 +78,11 @@ fn main() {
     let vertex_shader_src = include_str!("vert.glsl");
     let fragment_shader_src = include_str!("frag.glsl");
     let program =
+        glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None)
+            .unwrap();
+    let vertex_shader_src = include_str!("ui_vert.glsl");
+    let fragment_shader_src = include_str!("ui_frag.glsl");
+    let ui_program =
         glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None)
             .unwrap();
 
@@ -83,6 +102,7 @@ fn main() {
     let mut cam_direction = [0.0, 0.0, 1.0f32];
     let mut cam_up = [0.0, 1.0, 0.0f32];
     let mut cam_rotation = [0.0, 0.0f32];
+    let mut is_borderless = false;
     let mut t = 0.0f32;
 
     let (height, width) = (window.inner_size().height, window.inner_size().width);
@@ -103,8 +123,10 @@ fn main() {
                     }
                     // We now need to render everyting in response to a RedrawRequested event due to the animation
                     glium::winit::event::WindowEvent::RedrawRequested => {
-                        handle_redraw_request(
-                            &display,
+                        let mut target = display.draw();
+
+                        redraw_hendler::render_scene(
+                            &mut target,
                             &mut t,
                             &vertex_buffer,
                             &indeces,
@@ -115,6 +137,8 @@ fn main() {
                             &cam_up,
                             &cam_rotation,
                         );
+                        render_ui(&mut display, &mut target, &ui_program);
+                        target.finish().unwrap();
                     }
                     glium::winit::event::WindowEvent::Resized(window_size) => {
                         display.resize(window_size.into());
@@ -124,7 +148,16 @@ fn main() {
                         event,
                         is_synthetic: _,
                     } => {
-                        handle_key_evnet(event, &mut cam_pos, &mut cam_rotation, &cam_direction);
+                        // maybe turn this int olike render 3d scene or someshi
+                        handle_key_evnet(
+                            event,
+                            &mut cam_pos,
+                            &mut cam_rotation,
+                            &cam_direction,
+                            &mut window,
+                            &mut display,
+                            &mut is_borderless,
+                        );
                     }
                     glium::winit::event::WindowEvent::CursorMoved {
                         device_id: _,

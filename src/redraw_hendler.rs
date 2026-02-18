@@ -1,13 +1,58 @@
-use cgmath::{Deg, Matrix, Matrix4, Point3, Rad, Vector3, perspective, point3};
+use cgmath::{Deg, Matrix, Matrix4, Point3, Rad, Vector3, ortho, perspective, point3};
 use cgmath::{Matrix3, vec3};
 use glium::{Display, IndexBuffer, Program, VertexBuffer, glutin::surface::WindowSurface, uniform};
 
 use crate::Texture2d;
-use crate::Vertex;
-use glium::Surface;
+use crate::{UiVertex, Vertex};
+use glium::{Frame, Surface};
 
-pub fn handle_redraw_request(
-    display: &Display<WindowSurface>,
+pub fn render_ui(display: &mut Display<WindowSurface>, target: &mut Frame, program: &Program) {
+    let (width, height) = display.get_framebuffer_dimensions();
+    let half_w = width as f32 / 2.0;
+    let half_h = height as f32 / 2.0;
+    let ortho: [[f32; 4]; 4] = ortho(-half_w, half_w, -half_h, half_h, -0.9, 0.9).into();
+
+    let crosshair_vertecies: [UiVertex; 8] = [
+        UiVertex::new([-3.01, -10.03, 0.00], [0.15, 1.0, 0.15], [0.0, 0.0]), // 0
+        UiVertex::new([-3.01, 10.03, 0.00], [0.15, 1.0, 0.15], [0.0, 0.0]),  // 1
+        UiVertex::new([3.01, 10.03, 0.00], [0.15, 1.0, 0.15], [0.0, 0.0]),   // 2
+        UiVertex::new([3.01, -10.03, 0.00], [0.15, 1.0, 0.15], [0.0, 0.0]),  // 3
+        UiVertex::new([-10.03, -3.01, 0.00], [0.15, 1.0, 0.15], [0.0, 0.0]), // 4
+        UiVertex::new([-10.03, 3.01, 0.00], [0.15, 1.0, 0.15], [0.0, 0.0]),  // 5
+        UiVertex::new([10.03, 3.01, 0.00], [0.15, 1.0, 0.15], [0.0, 0.0]),   // 6
+        UiVertex::new([10.03, -3.01, 0.00], [0.15, 1.0, 0.15], [0.0, 0.0]),  // 7
+    ];
+    let indecies: [u32; 12] = [0, 3, 1, 1, 3, 2, 4, 5, 7, 5, 7, 6];
+
+    let vertex_buffer = VertexBuffer::dynamic(display, &crosshair_vertecies).unwrap();
+    let indecies = IndexBuffer::dynamic(
+        display,
+        glium::index::PrimitiveType::TrianglesList,
+        &indecies,
+    )
+    .unwrap();
+
+    let uniforms = uniform! {
+        mat: ortho
+    };
+    // target.clear_color_and_depth((0.15, 0.15, 0.15, 1.0), 1.0);
+
+    let params = glium::DrawParameters {
+        depth: glium::Depth {
+            test: glium::draw_parameters::DepthTest::Overwrite,
+            write: true,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    target
+        .draw(&vertex_buffer, &indecies, &program, &uniforms, &params)
+        .unwrap();
+}
+
+pub fn render_scene(
+    target: &mut Frame,
     t: &mut f32,
     vertex_buffer: &VertexBuffer<Vertex>,
     indecies: &IndexBuffer<u32>,
@@ -18,7 +63,6 @@ pub fn handle_redraw_request(
     cam_up: &[f32; 3],
     cam_rotation: &[f32; 2],
 ) {
-    let mut target = display.draw();
     *t += 0.5;
     let cam_pos = Point3::new(cam_pos[0], cam_pos[1], cam_pos[2]);
 
@@ -188,6 +232,4 @@ pub fn handle_redraw_request(
     target
         .draw(vertex_buffer, indecies, program, &uniforms, &params)
         .unwrap();
-
-    target.finish().unwrap();
 }
