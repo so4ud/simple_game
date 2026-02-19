@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cgmath::{InnerSpace, Matrix3, Rad, vec2, vec3};
 use glium::{
     Display,
@@ -12,12 +14,14 @@ use glium::{
 
 pub fn handle_key_evnet(
     event: KeyEvent,
+    held_keys: &mut HashMap<&str, bool>,
     cam_pos: &mut [f32; 3],
     cam_rotation: &mut [f32; 2],
     cam_front: &[f32; 3],
     window: &mut Window,
     display: &mut Display<WindowSurface>,
     is_borderles: &mut bool,
+    mouse_mode: &mut bool,
 ) {
     const MOVE_SPEED: f32 = 10.0;
     const ROTATION_SPEED: f32 = 3.751;
@@ -32,7 +36,15 @@ pub fn handle_key_evnet(
     match event.logical_key {
         Key::Named(n) => match n {
             NamedKey::Space => {
-                cam_pos1 += v_cam_up * MOVE_SPEED;
+                // cam_pos1 += v_cam_up * MOVE_SPEED;
+                match event.state {
+                    ElementState::Pressed => {
+                        held_keys.insert("space", true);
+                    }
+                    ElementState::Released => {
+                        held_keys.insert("space", false);
+                    }
+                }
             }
             NamedKey::Control => {
                 cam_pos1 -= v_cam_up * MOVE_SPEED;
@@ -96,6 +108,18 @@ pub fn handle_key_evnet(
             "d" => {
                 cam_pos1 -= v_cam_direction.cross(v_cam_up).normalize() * MOVE_SPEED;
             }
+            "m" => match event.state {
+                ElementState::Pressed => {
+                    *mouse_mode = !*mouse_mode;
+
+                    if *mouse_mode {
+                        window.set_cursor_visible(true);
+                    } else {
+                        window.set_cursor_visible(false);
+                    }
+                }
+                _ => (),
+            },
             _ => (),
         },
         _ => {

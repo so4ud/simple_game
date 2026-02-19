@@ -1,5 +1,12 @@
 use image::{self, io};
-use std::{hint, io::Cursor, thread::sleep, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    hint,
+    io::Cursor,
+    ops::Index,
+    thread::sleep,
+    time::Duration,
+};
 
 use crate::{cube::make_cube, keypress_handler::handle_key_evnet, redraw_hendler::render_ui};
 use cgmath::{
@@ -7,7 +14,8 @@ use cgmath::{
     num_traits::Float, ortho, perspective, vec4,
 };
 use glium::{
-    self, Surface, Texture2d, VertexBuffer, implement_vertex, index, uniform,
+    self, Surface, Texture2d, VertexBuffer, implement_uniform_block, implement_vertex, index,
+    uniform,
     uniforms::AsUniformValue,
     winit::{
         application::ApplicationHandler,
@@ -100,11 +108,17 @@ fn main() {
 
     let texture = glium::texture::Texture2d::new(&display, raw_image).unwrap();
 
+    let mut held_keys = HashMap::<&str, bool>::new();
+    {
+        held_keys.insert("space", false);
+    }
+
     let mut cam_pos = [0.0, 0.0, 0.5f32];
     let mut cam_direction = [0.0, 0.0, 1.0f32];
     let mut cam_up = [0.0, 1.0, 0.0f32];
     let mut cam_rotation = [0.0, 0.0f32];
     let mut is_borderless = false;
+    let mut mouse_mode = false;
     let mut t = 0.0f32;
 
     let (height, width) = (window.inner_size().height, window.inner_size().width);
@@ -114,10 +128,14 @@ fn main() {
         .unwrap();
 
     // TODO add the key tracking thingy for smotther movement
-
+    dbg!("sex");
     #[allow(deprecated)]
     event_loop
         .run(move |ev, window_target| {
+            // yaaaa it works
+            if held_keys["space"] == true {
+                cam_pos[1] += 1.0;
+            }
             match ev {
                 glium::winit::event::Event::WindowEvent { event, .. } => match event {
                     glium::winit::event::WindowEvent::CloseRequested => {
@@ -153,38 +171,43 @@ fn main() {
                         // maybe turn this int olike render 3d scene or someshi
                         handle_key_evnet(
                             event,
+                            &mut held_keys,
                             &mut cam_pos,
                             &mut cam_rotation,
                             &cam_direction,
                             &mut window,
                             &mut display,
                             &mut is_borderless,
+                            &mut mouse_mode,
                         );
                     }
                     glium::winit::event::WindowEvent::CursorMoved {
                         device_id: _,
                         position,
                     } => {
-                        const CAM_ROTATION_SPEED_MULTIPLIER: f32 = 0.1;
-                        let (x, y) = (
-                            position.x as f32 - (width / 2) as f32,
-                            position.y as f32 - (height / 2) as f32,
-                        );
-                        cam_rotation[0] += x * CAM_ROTATION_SPEED_MULTIPLIER;
+                        // dbg!(mouse_mode);
+                        if mouse_mode == false {
+                            const CAM_ROTATION_SPEED_MULTIPLIER: f32 = 0.1;
+                            let (x, y) = (
+                                position.x as f32 - (width / 2) as f32,
+                                position.y as f32 - (height / 2) as f32,
+                            );
+                            cam_rotation[0] += x * CAM_ROTATION_SPEED_MULTIPLIER;
 
-                        let temp_y = cam_rotation[1] + y * CAM_ROTATION_SPEED_MULTIPLIER;
+                            let temp_y = cam_rotation[1] + y * CAM_ROTATION_SPEED_MULTIPLIER;
 
-                        if temp_y > 89.9 {
-                            cam_rotation[1] = 89.9;
-                        } else if temp_y < -89.9 {
-                            cam_rotation[1] = -89.9;
-                        } else {
-                            cam_rotation[1] += y * CAM_ROTATION_SPEED_MULTIPLIER;
+                            if temp_y > 89.9 {
+                                cam_rotation[1] = 89.9;
+                            } else if temp_y < -89.9 {
+                                cam_rotation[1] = -89.9;
+                            } else {
+                                cam_rotation[1] += y * CAM_ROTATION_SPEED_MULTIPLIER;
+                            }
+
+                            window
+                                .set_cursor_position(PhysicalPosition::new(width / 2, height / 2))
+                                .unwrap();
                         }
-
-                        window
-                            .set_cursor_position(PhysicalPosition::new(width / 2, height / 2))
-                            .unwrap();
                     }
                     _ => (),
                 },
