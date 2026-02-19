@@ -49,13 +49,13 @@ pub fn handle_key_evnet(
             NamedKey::ArrowUp => {
                 cam_rotation1.y -= ROTATION_SPEED;
             }
-            NamedKey::F12 => {
-                panic!("F12 pressed. Process stopped");
+            NamedKey::Pause => {
+                panic!("Pause pressed. Process stopped");
             }
             NamedKey::F11 => match event.state {
                 ElementState::Pressed => {
                     dbg!();
-                    if *is_borderles == true {
+                    if *is_borderles == false {
                         window.set_decorations(false);
                         let _ = window.request_inner_size(PhysicalSize::new(1920, 1080));
                         window.set_outer_position(LogicalPosition::new(0.0, 0.0));
@@ -65,6 +65,10 @@ pub fn handle_key_evnet(
                         window.set_decorations(true);
                         let _ = window.request_inner_size(PhysicalSize::new(1280, 720));
                         display.resize((1280, 720));
+                        window.set_outer_position(LogicalPosition::new(
+                            1920 / 2 - 1280 / 2,
+                            1080 / 2 - 720 / 2,
+                        ));
                         *is_borderles = !*is_borderles;
                     }
                 }
@@ -75,6 +79,13 @@ pub fn handle_key_evnet(
         Key::Character(c) => match c.as_str() {
             "w" => {
                 cam_pos1 += v_cam_direction * MOVE_SPEED;
+                match event.state {
+                    // TODO yes you can do dat lets make the thang yahoooo
+                    ElementState::Released => {
+                        // dbg!("released");
+                    }
+                    _ => (),
+                }
             }
             "s" => {
                 cam_pos1 -= v_cam_direction * MOVE_SPEED;

@@ -1,4 +1,6 @@
-use cgmath::{Deg, Matrix, Matrix4, Point3, Rad, Vector3, ortho, perspective, point3};
+use cgmath::{
+    Deg, Matrix, Matrix4, Point3, Rad, Vector3, VectorSpace, ortho, perspective, point3, vec2,
+};
 use cgmath::{Matrix3, vec3};
 use glium::{Display, IndexBuffer, Program, VertexBuffer, glutin::surface::WindowSurface, uniform};
 
@@ -92,7 +94,7 @@ pub fn render_scene(
 
     let m: [[f32; 4]; 4] = (m * rot).into();
     let v: [[f32; 4]; 4] =
-        cgmath::Matrix4::look_at_rh(cam_pos, center, Vector3::new(0.0, 1.0, 0.0f32)).into();
+        cgmath::Matrix4::look_at_rh(cam_pos, center, vec3(cam_up.x, cam_up.y, cam_up.z)).into();
 
     let p: [[f32; 4]; 4] = {
         let (width, height) = target.get_dimensions();
@@ -145,11 +147,19 @@ pub fn render_scene(
         0: (*t / 5.0 % 360.0).to_radians(),
     });
 
+    let v1 = vec2(-0.3, 0.3f32);
+    let v2 = vec2(0.13, 0.3f32);
+    let v3 = vec2(0.13, -0.3f32);
+    let v4 = v1.lerp(v2, ((*t / 100.0).sin() + 1.0) / 2.0);
+    let v5 = v2.lerp(v3, ((*t / 100.0).sin() + 1.0) / 2.0);
+    let v6 = v4.lerp(v5, ((*t / 100.0).sin() + 1.0) / 2.0);
+    // dbg!(((*t / 360.0).sin() + 1.0) / 2.0);
+
     let m: Matrix4<f32> = [
         [0.5, 0.0, 0.0, 0.0],
         [0.0, 0.5, 0.0, 0.0],
         [0.0, 0.0, 0.5, 0.0],
-        [0.0, 0.3, 0.4, 0.001f32],
+        [v6.y, v6.x, 0.4, 0.001f32],
     ]
     .into();
 
