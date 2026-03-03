@@ -12,12 +12,7 @@ uniform mat4 v;
 uniform mat4 p;
 
 void main() {
-    mat4 mat = mat4(
-        vec4(1, 0, 0, 0),
-        vec4(0, 1, 0, 0),
-        vec4(0, 0, 1, 0),
-        vec4(0, 0, 0, 1)
-    );
+    mat4 mat = mat4(1);
     mat *= p;
     mat *= v;
     mat *= m;
