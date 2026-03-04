@@ -10,7 +10,7 @@ use std::{
 
 use crate::{
     cube::make_cube,
-    ecs::{Ecs, User},
+    ecs::{Ecs, System, User},
     keypress_handler::handle_key_evnet,
     redraw_hendler::render_ui,
 };
@@ -37,6 +37,7 @@ mod ecs;
 
 // use crate::cube::make_cube;
 mod cube;
+mod hendle_cursour;
 mod keypress_handler;
 mod redraw_hendler;
 #[derive(Debug, Copy, Clone)]
@@ -81,19 +82,6 @@ struct App {}
 fn main() {
     let (mut ecs, event_loop) = Ecs::new();
 
-    let mut held_keys = HashMap::<&str, bool>::new();
-    {
-        held_keys.insert("space", false);
-    }
-
-    let mut cam_pos: [f32; 3] = [0.0, 0.0, 0.5f32];
-    let mut cam_direction: [f32; 3] = [0.0, 0.0, 1.0f32];
-    let mut cam_up: [f32; 3] = [0.0, 1.0, 0.0f32];
-    let mut cam_rotation: [f32; 2] = [0.0, 0.0f32];
-    let mut is_borderless: bool = false;
-    let mut mouse_mode: bool = false;
-    let mut t: f32 = 0.0f32;
-
     // ! let (height, width) = (window.inner_size().height, window.inner_size().width);
     // ! window.set_cursor_visible(false);
     // ! window
@@ -101,6 +89,20 @@ fn main() {
     // !     .unwrap();
 
     // if true {
+    let hello_system = System {
+        invoke_on: User::Update,
+        func: Box::new(|_, _, recourses, _| {
+            recourses.thing.t += 0.1;
+        }),
+    };
+    let start_system = System {
+        invoke_on: User::Startup,
+        func: Box::new(|_, _, _, _| {
+            println!("were on bebey!!!!!!!!!!");
+        }),
+    };
+    ecs.add_system(start_system);
+    ecs.add_system(hello_system);
     event_loop.run_app(&mut ecs).unwrap();
     // } else {
     //     // TODO add the key tracking thingy for smotther movement

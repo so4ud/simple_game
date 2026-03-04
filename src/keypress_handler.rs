@@ -14,7 +14,7 @@ use glium::{
 
 pub fn handle_key_evnet(
     event: KeyEvent,
-    held_keys: &mut HashMap<&str, bool>,
+    held_keys: &mut HashMap<String, bool>,
     cam_pos: &mut [f32; 3],
     cam_rotation: &mut [f32; 2],
     cam_front: &[f32; 3],
@@ -39,10 +39,10 @@ pub fn handle_key_evnet(
                 // cam_pos1 += v_cam_up * MOVE_SPEED;
                 match event.state {
                     ElementState::Pressed => {
-                        held_keys.insert("space", true);
+                        held_keys.insert("space".to_string(), true);
                     }
                     ElementState::Released => {
-                        held_keys.insert("space", false);
+                        held_keys.insert("space".to_string(), false);
                     }
                 }
             }

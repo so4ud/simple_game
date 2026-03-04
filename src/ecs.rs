@@ -1,6 +1,5 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
-use egui::PaintCallback;
 use glium::{
     Display,
     glutin::{api::egl::display, surface::WindowSurface},
@@ -15,10 +14,15 @@ use glium::{
 
 use crate::{
     cube::make_cube,
+    hendle_cursour,
+    keypress_handler::handle_key_evnet,
     redraw_hendler::{self, render_ui},
 };
 #[derive(Debug)]
-pub enum User {}
+pub enum User {
+    Update,
+    Startup,
+}
 
 /// THE ECS archetechture
 /// Im Sold integrate this in the game (and refactor to app.run() if posible)
@@ -40,9 +44,10 @@ impl Ecs {
     pub fn new() -> (Self, EventLoop<User>) {
         let (event_loop, window, display) = Self::init_winnit();
         let event_emiter = EventEmiter {
+            first: true,
             proxy: event_loop.create_proxy(),
         };
-        // let event_loop = Some(event_loop);
+        let held_keys = HashMap::new();
 
         let thing = Self::innit_thing(&display);
 
@@ -52,6 +57,7 @@ impl Ecs {
         let resources = Resources {
             event_emiter,
             window,
+            held_keys,
             display,
             thing,
         };
@@ -144,6 +150,10 @@ impl Ecs {
 
         return (event_loop, window, display);
     }
+
+    pub fn add_system(&mut self, system: System) {
+        self.systems.systems.push(system);
+    }
 }
 
 // ! finish this
@@ -154,12 +164,16 @@ impl ApplicationHandler<User> for Ecs {
         window_id: glium::winit::window::WindowId,
         event: glium::winit::event::WindowEvent,
     ) {
-        self.resources.thing.t += 0.1;
-        dbg!(&self.resources.thing.t);
+        self.resources.window.set_cursor_visible(false);
+
         match event {
             glium::winit::event::WindowEvent::CloseRequested => {
                 event_loop.exit();
             }
+            glium::winit::event::WindowEvent::CursorMoved {
+                device_id,
+                position,
+            } => hendle_cursour::handle_cursor(self, position),
             // We now need to render everyting in response to a RedrawRequested event due to the animation
             glium::winit::event::WindowEvent::RedrawRequested => {
                 let mut target = self.resources.display.draw();
@@ -198,59 +212,40 @@ impl ApplicationHandler<User> for Ecs {
                 is_synthetic: _,
             } => {
                 // maybe turn this int olike render 3d scene or someshi
-                // handle_key_evnet(
-                //     event,
-                //     &mut held_keys,
-                //     &mut cam_pos,
-                //     &mut cam_rotation,
-                //     &cam_direction,
-                //     &mut self.resources.window,
-                //     &mut self.resources.display,
-                //     &mut is_borderless,
-                //     &mut mouse_mode,
-                // );
-            }
-            glium::winit::event::WindowEvent::CursorMoved {
-                device_id: _,
-                position,
-            } => {
-                /*
-                // dbg!(mouse_mode);
-                // if mouse_mode == false {
-                //     const CAM_ROTATION_SPEED_MULTIPLIER: f32 = 0.1;
-                //     let (x, y) = (
-                //         position.x as f32 - (width / 2) as f32,
-                //         position.y as f32 - (height / 2) as f32,
-                //     );
-                //     cam_rotation[0] += x * CAM_ROTATION_SPEED_MULTIPLIER;
-
-                //     let temp_y = cam_rotation[1] + y * CAM_ROTATION_SPEED_MULTIPLIER;
-
-                //     if temp_y > 89.9 {
-                //         cam_rotation[1] = 89.9;
-                //     } else if temp_y < -89.9 {
-                //         cam_rotation[1] = -89.9;
-                //     } else {
-                //         cam_rotation[1] += y * CAM_ROTATION_SPEED_MULTIPLIER;
-                //     }
-
-                //     self.resources
-                //         .window
-                //         .set_cursor_position(PhysicalPosition::new(width / 2, height / 2))
-                //         .unwrap();
-                // } */
+                handle_key_evnet(
+                    event,
+                    &mut self.resources.held_keys,
+                    &mut self.resources.thing.cam_pos,
+                    &mut self.resources.thing.cam_rotation,
+                    &self.resources.thing.cam_direction,
+                    &mut self.resources.window,
+                    &mut self.resources.display,
+                    &mut self.resources.thing.is_borderless,
+                    &mut self.resources.thing.mouse_mode,
+                );
             }
 
             _ => (),
         }
-        dbg!(&self.resources.thing.t);
     }
-
     fn resumed(&mut self, event_loop: &glium::winit::event_loop::ActiveEventLoop) {
         self.resources.window.request_redraw();
     }
-    fn user_event(&mut self, event_loop: &glium::winit::event_loop::ActiveEventLoop, event: User) {}
+    fn user_event(&mut self, event_loop: &glium::winit::event_loop::ActiveEventLoop, event: User) {
+        self.systems.invoke(
+            &mut self.entities,
+            &mut self.components,
+            &mut self.resources,
+            event,
+        );
+    }
     fn about_to_wait(&mut self, event_loop: &event_loop::ActiveEventLoop) {
+        if !self.resources.event_emiter.first {
+            self.resources.event_emiter.emmit(User::Update);
+        } else {
+            self.resources.event_emiter.emmit(User::Startup);
+        }
+        self.resources.event_emiter.first = false;
         self.resources.window.request_redraw();
     }
 }
@@ -261,12 +256,15 @@ pub struct Entities {
 
 /// id or signature
 pub struct Entity {
+    /// always equals to the index
+    pub id: u32,
     /// index
-    parent: Option<u32>,
+    pub parent_id: Option<u32>,
     /// attached components
-    signature: SIGTYPE,
+    pub signature: SIGTYPE,
 }
 
+//
 pub struct Components {
     // put components here
     // positions: Vec<Option<Position>>,
@@ -275,45 +273,89 @@ pub struct Components {
 pub struct Systems {
     pub systems: Vec<System>,
 }
+impl Systems {
+    fn invoke(
+        &mut self,
+        entities: &mut Entities,
+        compoents: &mut Components,
+        recources: &mut Resources,
+        event: User,
+    ) {
+        match event {
+            User::Update => {
+                for i in &mut self.systems {
+                    match i.invoke_on {
+                        User::Update => {
+                            i.invoke(entities, compoents, recources, &event);
+                        }
+                        _ => (),
+                    }
+                }
+            }
+            User::Startup => {
+                for i in &mut self.systems {
+                    match i.invoke_on {
+                        User::Startup => {
+                            i.invoke(entities, compoents, recources, &event);
+                        }
+                        _ => (),
+                    }
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
 pub struct System {
-    invoke_on: User,
-    func: Box<dyn FnMut(&mut Components, &mut Resources, Option<User>)>,
-    /// maybe
-    query: SIGTYPE,
-    mut_query: SIGTYPE,
+    pub invoke_on: User,
+    pub func: Box<dyn FnMut(&mut Entities, &mut Components, &mut Resources, Option<&User>)>,
+}
+impl System {
+    pub fn invoke(
+        &mut self,
+        entities: &mut Entities,
+        compoents: &mut Components,
+        recources: &mut Resources,
+        event: &User,
+    ) {
+        (self.func)(entities, compoents, recources, Some(event))
+    }
 }
 
 pub struct Resources {
     // put resources here
-    event_emiter: EventEmiter,
-    window: Window,
-    display: Display<WindowSurface>,
-    thing: Thing,
+    pub event_emiter: EventEmiter,
+    pub window: Window,
+    pub display: Display<WindowSurface>,
+    pub held_keys: HashMap<String, bool>,
+    pub thing: Thing,
 }
 
-struct Thing {
-    cam_pos: [f32; 3],
-    cam_direction: [f32; 3],
-    cam_up: [f32; 3],
-    cam_rotation: [f32; 2],
-    is_borderless: bool,
-    mouse_mode: bool,
-    t: f32,
+pub struct Thing {
+    pub cam_pos: [f32; 3],
+    pub cam_direction: [f32; 3],
+    pub cam_up: [f32; 3],
+    pub cam_rotation: [f32; 2],
+    pub is_borderless: bool,
+    pub mouse_mode: bool,
+    pub t: f32,
     //
-    indeces: glium::IndexBuffer<u32>,
-    vertex_buffer: glium::VertexBuffer<crate::Vertex>,
-    program: glium::Program,
-    ui_program: glium::Program,
-    texture: glium::Texture2d,
+    pub indeces: glium::IndexBuffer<u32>,
+    pub vertex_buffer: glium::VertexBuffer<crate::Vertex>,
+    pub program: glium::Program,
+    pub ui_program: glium::Program,
+    pub texture: glium::Texture2d,
 }
 
 pub struct EventEmiter {
+    first: bool,
     proxy: EventLoopProxy<User>,
 }
 impl EventEmiter {
     pub fn emmit(&mut self, event: User) {
-        self.proxy.send_event(event);
+        self.proxy
+            .send_event(event)
+            .expect("event loop no longer existstss");
     }
 }
-
-pub fn man() {}
