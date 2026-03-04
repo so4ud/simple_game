@@ -9,7 +9,10 @@ use std::{
 };
 
 use crate::{
-    cube::make_cube, ecs::Ecs, keypress_handler::handle_key_evnet, redraw_hendler::render_ui,
+    cube::make_cube,
+    ecs::{Ecs, User},
+    keypress_handler::handle_key_evnet,
+    redraw_hendler::render_ui,
 };
 use cgmath::{
     self, Matrix, Matrix3, Matrix4, Point3, Rad, SquareMatrix, Vector3, Vector4, frustum,
@@ -23,6 +26,7 @@ use glium::{
         application::ApplicationHandler,
         dpi::PhysicalPosition,
         event::{self, DeviceEvent, KeyEvent},
+        event_loop,
         keyboard::{Key, NamedKey},
         platform::pump_events::EventLoopExtPumpEvents,
         window,
@@ -72,24 +76,24 @@ impl Vertex {
 #[derive(Debug)]
 struct App {}
 
-#[derive(Debug)]
-enum User {}
-
 // add app class and also user events work
 
 fn main() {
-    let event_loop = glium::winit::event_loop::EventLoop::<User>::with_user_event()
-        .build()
-        .expect("event loop building");
+    /* extart alldat in window startup system and resources
+    //     let event_loop = glium::winit::event_loop::EventLoop::<User>::with_user_event()
+    //         .build()
+    //         .expect("event loop building");
 
-    let (mut window, mut display) = glium::backend::glutin::SimpleWindowBuilder::new()
-        .with_title("kys >_<")
-        .with_inner_size(1280, 720)
-        .build(&event_loop);
-    window.set_resizable(true);
+    //     let (mut window, mut display) = glium::backend::glutin::SimpleWindowBuilder::new()
+    //     .with_title("kys >_<")
+    //     .with_inner_size(1280, 720)
+    //     .build(&event_loop);
+    // window.set_resizable(true);
 
-    event_loop.create_proxy();
-    // We've changed our shape to a rectangle so the image isn't distorted.
+    // event_loop.create_proxy(); */
+
+    let (mut ecs, event_loop) = Ecs::new();
+
     let (shape, indeces) = make_cube(0.2);
 
     let indeces =
@@ -127,24 +131,20 @@ fn main() {
         held_keys.insert("space", false);
     }
 
-    let mut cam_pos = [0.0, 0.0, 0.5f32];
-    let mut cam_direction = [0.0, 0.0, 1.0f32];
-    let mut cam_up = [0.0, 1.0, 0.0f32];
-    let mut cam_rotation = [0.0, 0.0f32];
-    let mut is_borderless = false;
-    let mut mouse_mode = false;
-    let mut t = 0.0f32;
+    let mut cam_pos: [f32; 3] = [0.0, 0.0, 0.5f32];
+    let mut cam_direction: [f32; 3] = [0.0, 0.0, 1.0f32];
+    let mut cam_up: [f32; 3] = [0.0, 1.0, 0.0f32];
+    let mut cam_rotation: [f32; 2] = [0.0, 0.0f32];
+    let mut is_borderless: bool = false;
+    let mut mouse_mode: bool = false;
+    let mut t: f32 = 0.0f32;
 
-    let (height, width) = (window.inner_size().height, window.inner_size().width);
-    window.set_cursor_visible(false);
-    window
-        .set_cursor_position(PhysicalPosition::new(width / 2, height / 2)) // relative to te window YEEEEEEEEEEEEEEEEEEEEA
-        .unwrap();
+    // ! let (height, width) = (window.inner_size().height, window.inner_size().width);
+    // ! window.set_cursor_visible(false);
+    // ! window
+    // !     .set_cursor_position(PhysicalPosition::new(width / 2, height / 2)) // relative to te window YEEEEEEEEEEEEEEEEEEEEA
+    // !     .unwrap();
 
-    // let proxy = event_loop.create_proxy();
-    // proxy.send_event(User::Pp).unwrap();
-
-    let mut ecs = Ecs::new();
     if true {
         event_loop.run_app(&mut ecs).unwrap();
     } else {
