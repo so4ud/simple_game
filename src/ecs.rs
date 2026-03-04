@@ -43,23 +43,8 @@ impl Ecs {
             proxy: event_loop.create_proxy(),
         };
         // let event_loop = Some(event_loop);
-        let cam_pos: [f32; 3] = [0.0, 0.0, 0.5f32];
-        let cam_direction: [f32; 3] = [0.0, 0.0, 1.0f32];
-        let cam_up: [f32; 3] = [0.0, 1.0, 0.0f32];
-        let cam_rotation: [f32; 2] = [0.0, 0.0f32];
-        let is_borderless: bool = false;
-        let mouse_mode: bool = false;
-        let t: f32 = 0.0f32;
 
-        let thing = Thing {
-            cam_pos,
-            cam_direction,
-            cam_up,
-            cam_rotation,
-            is_borderless,
-            mouse_mode,
-            t,
-        };
+        let thing = Self::innit_thing(&display);
 
         let entities = Entities { entities: vec![] };
         let components = Components {};
@@ -80,6 +65,67 @@ impl Ecs {
             },
             event_loop,
         )
+    }
+
+    fn innit_thing(display: &Display<WindowSurface>) -> Thing {
+        let cam_pos: [f32; 3] = [0.0, 0.0, 0.5f32];
+        let cam_direction: [f32; 3] = [0.0, 0.0, 1.0f32];
+        let cam_up: [f32; 3] = [0.0, 1.0, 0.0f32];
+        let cam_rotation: [f32; 2] = [0.0, 0.0f32];
+        let is_borderless: bool = false;
+        let mouse_mode: bool = false;
+        let t: f32 = 0.0f32;
+
+        let (shape, indeces) = make_cube(0.2);
+
+        let indeces: glium::IndexBuffer<u32> = glium::index::IndexBuffer::dynamic(
+            display,
+            index::PrimitiveType::TrianglesList,
+            &indeces,
+        )
+        .unwrap();
+        let vertex_buffer: glium::VertexBuffer<crate::Vertex> =
+            glium::VertexBuffer::new(display, &shape).unwrap();
+
+        let vertex_shader_src = include_str!("vert.glsl");
+        let fragment_shader_src = include_str!("frag.glsl");
+        let program: glium::Program =
+            glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None)
+                .unwrap();
+        let vertex_shader_src = include_str!("ui_vert.glsl");
+        let fragment_shader_src = include_str!("ui_frag.glsl");
+        let ui_program: glium::Program =
+            glium::Program::from_source(display, vertex_shader_src, fragment_shader_src, None)
+                .unwrap();
+
+        let image = image::load(
+            // std::io::Cursor::new(&include_bytes!("defoult_texture.png")[..]),
+            std::io::Cursor::new(&include_bytes!("cat.png")[..]),
+            image::ImageFormat::Png,
+        )
+        .unwrap()
+        .to_rgba8();
+
+        let image_dimensions = image.dimensions();
+        let raw_image =
+            glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+
+        let texture: glium::Texture2d = glium::texture::Texture2d::new(display, raw_image).unwrap();
+
+        Thing {
+            cam_direction,
+            cam_pos,
+            cam_rotation,
+            cam_up,
+            is_borderless,
+            mouse_mode,
+            t,
+            indeces,
+            vertex_buffer,
+            program,
+            ui_program,
+            texture,
+        }
     }
 
     fn init_winnit() -> (
@@ -108,6 +154,8 @@ impl ApplicationHandler<User> for Ecs {
         window_id: glium::winit::window::WindowId,
         event: glium::winit::event::WindowEvent,
     ) {
+        self.resources.thing.t += 0.1;
+        dbg!(&self.resources.thing.t);
         match event {
             glium::winit::event::WindowEvent::CloseRequested => {
                 event_loop.exit();
@@ -116,65 +164,29 @@ impl ApplicationHandler<User> for Ecs {
             glium::winit::event::WindowEvent::RedrawRequested => {
                 let mut target = self.resources.display.draw();
 
-                let (shape, indeces) = make_cube(0.2);
-
-                let indeces = glium::index::IndexBuffer::dynamic(
-                    &self.resources.display,
-                    index::PrimitiveType::TrianglesList,
-                    &indeces,
-                )
-                .unwrap();
-                let vertex_buffer =
-                    glium::VertexBuffer::new(&self.resources.display, &shape).unwrap();
-
-                let vertex_shader_src = include_str!("vert.glsl");
-                let fragment_shader_src = include_str!("frag.glsl");
-                let program = glium::Program::from_source(
-                    &self.resources.display,
-                    vertex_shader_src,
-                    fragment_shader_src,
-                    None,
-                )
-                .unwrap();
-                let vertex_shader_src = include_str!("ui_vert.glsl");
-                let fragment_shader_src = include_str!("ui_frag.glsl");
-                let ui_program = glium::Program::from_source(
-                    &self.resources.display,
-                    vertex_shader_src,
-                    fragment_shader_src,
-                    None,
-                )
-                .unwrap();
-
-                let image = image::load(
-                    // std::io::Cursor::new(&include_bytes!("defoult_texture.png")[..]),
-                    std::io::Cursor::new(&include_bytes!("cat.png")[..]),
-                    image::ImageFormat::Png,
-                )
-                .unwrap()
-                .to_rgba8();
-
-                let image_dimensions = image.dimensions();
-                let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(
-                    &image.into_raw(),
-                    image_dimensions,
-                );
-
-                let texture = glium::texture::Texture2d::new(&display, raw_image).unwrap();
+                // indeces: glium::IndexBuffer<u32>,
+                // vertex_buffer: glium::VertexBuffer<crate::Vertex>,
+                // program: glium::Program,
+                // ui_program: glium::Program,
+                // texture: glium::Texture2d,
 
                 redraw_hendler::render_scene(
                     &mut target,
                     &mut self.resources.thing.t,
-                    &vertex_buffer,
-                    &indeces,
-                    &program,
-                    &texture,
+                    &self.resources.thing.vertex_buffer,
+                    &self.resources.thing.indeces,
+                    &self.resources.thing.program,
+                    &self.resources.thing.texture,
                     &self.resources.thing.cam_pos,
                     &self.resources.thing.cam_direction,
                     &self.resources.thing.cam_up,
                     &self.resources.thing.cam_rotation,
                 );
-                render_ui(&mut self.resources.display, &mut target, &ui_program);
+                render_ui(
+                    &mut self.resources.display,
+                    &mut target,
+                    &self.resources.thing.ui_program,
+                );
                 target.finish().unwrap();
             }
             glium::winit::event::WindowEvent::Resized(window_size) => {
@@ -231,10 +243,16 @@ impl ApplicationHandler<User> for Ecs {
 
             _ => (),
         }
+        dbg!(&self.resources.thing.t);
     }
 
-    fn resumed(&mut self, event_loop: &glium::winit::event_loop::ActiveEventLoop) {}
+    fn resumed(&mut self, event_loop: &glium::winit::event_loop::ActiveEventLoop) {
+        self.resources.window.request_redraw();
+    }
     fn user_event(&mut self, event_loop: &glium::winit::event_loop::ActiveEventLoop, event: User) {}
+    fn about_to_wait(&mut self, event_loop: &event_loop::ActiveEventLoop) {
+        self.resources.window.request_redraw();
+    }
 }
 
 pub struct Entities {
@@ -281,6 +299,12 @@ struct Thing {
     is_borderless: bool,
     mouse_mode: bool,
     t: f32,
+    //
+    indeces: glium::IndexBuffer<u32>,
+    vertex_buffer: glium::VertexBuffer<crate::Vertex>,
+    program: glium::Program,
+    ui_program: glium::Program,
+    texture: glium::Texture2d,
 }
 
 pub struct EventEmiter {

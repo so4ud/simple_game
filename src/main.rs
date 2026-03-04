@@ -79,52 +79,7 @@ struct App {}
 // add app class and also user events work
 
 fn main() {
-    /* extart alldat in window startup system and resources
-    //     let event_loop = glium::winit::event_loop::EventLoop::<User>::with_user_event()
-    //         .build()
-    //         .expect("event loop building");
-
-    //     let (mut window, mut display) = glium::backend::glutin::SimpleWindowBuilder::new()
-    //     .with_title("kys >_<")
-    //     .with_inner_size(1280, 720)
-    //     .build(&event_loop);
-    // window.set_resizable(true);
-
-    // event_loop.create_proxy(); */
-
     let (mut ecs, event_loop) = Ecs::new();
-
-    let (shape, indeces) = make_cube(0.2);
-
-    let indeces =
-        glium::index::IndexBuffer::dynamic(&display, index::PrimitiveType::TrianglesList, &indeces)
-            .unwrap();
-    let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
-
-    let vertex_shader_src = include_str!("vert.glsl");
-    let fragment_shader_src = include_str!("frag.glsl");
-    let program =
-        glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None)
-            .unwrap();
-    let vertex_shader_src = include_str!("ui_vert.glsl");
-    let fragment_shader_src = include_str!("ui_frag.glsl");
-    let ui_program =
-        glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None)
-            .unwrap();
-
-    let image = image::load(
-        // std::io::Cursor::new(&include_bytes!("defoult_texture.png")[..]),
-        std::io::Cursor::new(&include_bytes!("cat.png")[..]),
-        image::ImageFormat::Png,
-    )
-    .unwrap()
-    .to_rgba8();
-
-    let image_dimensions = image.dimensions();
-    let raw_image =
-        glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-
-    let texture = glium::texture::Texture2d::new(&display, raw_image).unwrap();
 
     let mut held_keys = HashMap::<&str, bool>::new();
     {
@@ -145,114 +100,114 @@ fn main() {
     // !     .set_cursor_position(PhysicalPosition::new(width / 2, height / 2)) // relative to te window YEEEEEEEEEEEEEEEEEEEEA
     // !     .unwrap();
 
-    if true {
-        event_loop.run_app(&mut ecs).unwrap();
-    } else {
-        // TODO add the key tracking thingy for smotther movement
-        dbg!("sex");
-        #[allow(deprecated)]
-        event_loop
-            .run(move |ev, window_target| {
-                // window_target.exit();
-                // yaaaa it works
-                if !held_keys.contains_key("space") {
-                    held_keys.insert("space", false);
-                }
-                if held_keys["space"] == true {
-                    cam_pos[1] += 1.0 * 0.3;
-                }
-                match ev {
-                    glium::winit::event::Event::WindowEvent { event, .. } => match event {
-                        glium::winit::event::WindowEvent::CloseRequested => {
-                            window_target.exit();
-                        }
-                        // We now need to render everyting in response to a RedrawRequested event due to the animation
-                        glium::winit::event::WindowEvent::RedrawRequested => {
-                            let mut target = display.draw();
+    // if true {
+    event_loop.run_app(&mut ecs).unwrap();
+    // } else {
+    //     // TODO add the key tracking thingy for smotther movement
+    //     dbg!("sex");
+    //     #[allow(deprecated)]
+    //     event_loop
+    //         .run(move |ev, window_target| {
+    //             // window_target.exit();
+    //             // yaaaa it works
+    //             if !held_keys.contains_key("space") {
+    //                 held_keys.insert("space", false);
+    //             }
+    //             if held_keys["space"] == true {
+    //                 cam_pos[1] += 1.0 * 0.3;
+    //             }
+    //             match ev {
+    //                 glium::winit::event::Event::WindowEvent { event, .. } => match event {
+    //                     glium::winit::event::WindowEvent::CloseRequested => {
+    //                         window_target.exit();
+    //                     }
+    //                     // We now need to render everyting in response to a RedrawRequested event due to the animation
+    //                     glium::winit::event::WindowEvent::RedrawRequested => {
+    //                         let mut target = display.draw();
 
-                            redraw_hendler::render_scene(
-                                &mut target,
-                                &mut t,
-                                &vertex_buffer,
-                                &indeces,
-                                &program,
-                                &texture,
-                                &cam_pos,
-                                &cam_direction,
-                                &cam_up,
-                                &cam_rotation,
-                            );
-                            render_ui(&mut display, &mut target, &ui_program);
-                            target.finish().unwrap();
-                        }
-                        glium::winit::event::WindowEvent::Resized(window_size) => {
-                            display.resize(window_size.into());
-                        }
-                        glium::winit::event::WindowEvent::KeyboardInput {
-                            device_id: _,
-                            event,
-                            is_synthetic: _,
-                        } => {
-                            // maybe turn this int olike render 3d scene or someshi
-                            handle_key_evnet(
-                                event,
-                                &mut held_keys,
-                                &mut cam_pos,
-                                &mut cam_rotation,
-                                &cam_direction,
-                                &mut window,
-                                &mut display,
-                                &mut is_borderless,
-                                &mut mouse_mode,
-                            );
-                        }
-                        glium::winit::event::WindowEvent::CursorMoved {
-                            device_id: _,
-                            position,
-                        } => {
-                            // dbg!(mouse_mode);
-                            if mouse_mode == false {
-                                const CAM_ROTATION_SPEED_MULTIPLIER: f32 = 0.1;
-                                let (x, y) = (
-                                    position.x as f32 - (width / 2) as f32,
-                                    position.y as f32 - (height / 2) as f32,
-                                );
-                                cam_rotation[0] += x * CAM_ROTATION_SPEED_MULTIPLIER;
+    //                         redraw_hendler::render_scene(
+    //                             &mut target,
+    //                             &mut t,
+    //                             &vertex_buffer,
+    //                             &indeces,
+    //                             &program,
+    //                             &texture,
+    //                             &cam_pos,
+    //                             &cam_direction,
+    //                             &cam_up,
+    //                             &cam_rotation,
+    //                         );
+    //                         render_ui(&mut display, &mut target, &ui_program);
+    //                         target.finish().unwrap();
+    //                     }
+    //                     glium::winit::event::WindowEvent::Resized(window_size) => {
+    //                         display.resize(window_size.into());
+    //                     }
+    //                     glium::winit::event::WindowEvent::KeyboardInput {
+    //                         device_id: _,
+    //                         event,
+    //                         is_synthetic: _,
+    //                     } => {
+    //                         // maybe turn this int olike render 3d scene or someshi
+    //                         handle_key_evnet(
+    //                             event,
+    //                             &mut held_keys,
+    //                             &mut cam_pos,
+    //                             &mut cam_rotation,
+    //                             &cam_direction,
+    //                             &mut window,
+    //                             &mut display,
+    //                             &mut is_borderless,
+    //                             &mut mouse_mode,
+    //                         );
+    //                     }
+    //                     glium::winit::event::WindowEvent::CursorMoved {
+    //                         device_id: _,
+    //                         position,
+    //                     } => {
+    //                         // dbg!(mouse_mode);
+    //                         if mouse_mode == false {
+    //                             const CAM_ROTATION_SPEED_MULTIPLIER: f32 = 0.1;
+    //                             let (x, y) = (
+    //                                 position.x as f32 - (width / 2) as f32,
+    //                                 position.y as f32 - (height / 2) as f32,
+    //                             );
+    //                             cam_rotation[0] += x * CAM_ROTATION_SPEED_MULTIPLIER;
 
-                                let temp_y = cam_rotation[1] + y * CAM_ROTATION_SPEED_MULTIPLIER;
+    //                             let temp_y = cam_rotation[1] + y * CAM_ROTATION_SPEED_MULTIPLIER;
 
-                                if temp_y > 89.9 {
-                                    cam_rotation[1] = 89.9;
-                                } else if temp_y < -89.9 {
-                                    cam_rotation[1] = -89.9;
-                                } else {
-                                    cam_rotation[1] += y * CAM_ROTATION_SPEED_MULTIPLIER;
-                                }
+    //                             if temp_y > 89.9 {
+    //                                 cam_rotation[1] = 89.9;
+    //                             } else if temp_y < -89.9 {
+    //                                 cam_rotation[1] = -89.9;
+    //                             } else {
+    //                                 cam_rotation[1] += y * CAM_ROTATION_SPEED_MULTIPLIER;
+    //                             }
 
-                                window
-                                    .set_cursor_position(PhysicalPosition::new(
-                                        width / 2,
-                                        height / 2,
-                                    ))
-                                    .unwrap();
-                            }
-                        }
+    //                             window
+    //                                 .set_cursor_position(PhysicalPosition::new(
+    //                                     width / 2,
+    //                                     height / 2,
+    //                                 ))
+    //                                 .unwrap();
+    //                         }
+    //                     }
 
-                        _ => (),
-                    },
-                    event::Event::UserEvent(sex) => {
-                        dbg!(sex);
-                    }
+    //                     _ => (),
+    //                 },
+    //                 event::Event::UserEvent(sex) => {
+    //                     dbg!(sex);
+    //                 }
 
-                    // By requesting a redraw in response to a AboutToWait event we get continuous rendering.
-                    // For applications that only change due to user input you could remove this handler.
-                    glium::winit::event::Event::AboutToWait => {
-                        window.request_redraw();
-                        // window.set_decorations(false);
-                    }
-                    _ => (),
-                }
-            })
-            .unwrap();
-    }
+    //                 // By requesting a redraw in response to a AboutToWait event we get continuous rendering.
+    //                 // For applications that only change due to user input you could remove this handler.
+    //                 glium::winit::event::Event::AboutToWait => {
+    //                     window.request_redraw();
+    //                     // window.set_decorations(false);
+    //                 }
+    //                 _ => (),
+    //             }
+    //         })
+    //         .unwrap();
+    // }
 }
