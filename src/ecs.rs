@@ -5,6 +5,7 @@ use glium::{
     glutin::{api::egl::display, surface::WindowSurface},
     index,
     winit::{
+        self,
         application::ApplicationHandler,
         dpi::PhysicalPosition,
         event_loop::{self, EventLoop, EventLoopProxy},
@@ -156,7 +157,6 @@ impl Ecs {
     }
 }
 
-// ! finish this
 impl ApplicationHandler<User> for Ecs {
     fn window_event(
         &mut self,
@@ -328,7 +328,7 @@ pub struct Resources {
     pub event_emiter: EventEmiter,
     pub window: Window,
     pub display: Display<WindowSurface>,
-    pub held_keys: HashMap<String, bool>,
+    pub held_keys: HashMap<winit::keyboard::Key, bool>,
     pub thing: Thing,
 }
 

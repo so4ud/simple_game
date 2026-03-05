@@ -5,6 +5,7 @@ use glium::{
     Display,
     glutin::surface::WindowSurface,
     winit::{
+        self,
         dpi::{LogicalPosition, PhysicalSize},
         event::{ElementState, KeyEvent},
         keyboard::{Key, NamedKey},
@@ -14,7 +15,7 @@ use glium::{
 
 pub fn handle_key_evnet(
     event: KeyEvent,
-    held_keys: &mut HashMap<String, bool>,
+    held_keys: &mut HashMap<winit::keyboard::Key, bool>,
     cam_pos: &mut [f32; 3],
     cam_rotation: &mut [f32; 2],
     cam_front: &[f32; 3],
@@ -33,37 +34,31 @@ pub fn handle_key_evnet(
         0: cam_rotation1.x.to_radians(),
     }) * vec3(cam_front[0], cam_front[1], cam_front[2]);
 
+    held_keys.insert(event.logical_key.clone(), event.state.is_pressed());
+
     match event.logical_key {
         Key::Named(n) => match n {
-            NamedKey::Space => {
-                // cam_pos1 += v_cam_up * MOVE_SPEED;
-                match event.state {
-                    ElementState::Pressed => {
-                        held_keys.insert("space".to_string(), true);
-                    }
-                    ElementState::Released => {
-                        held_keys.insert("space".to_string(), false);
-                    }
-                }
-            }
-            NamedKey::Control => {
-                cam_pos1 -= v_cam_up * MOVE_SPEED;
-            }
-            NamedKey::ArrowRight => {
-                cam_rotation1.x += ROTATION_SPEED;
-            }
-            NamedKey::ArrowLeft => {
-                cam_rotation1.x -= ROTATION_SPEED;
-            }
-            NamedKey::ArrowDown => {
-                cam_rotation1.y += ROTATION_SPEED;
-            }
-            NamedKey::ArrowUp => {
-                cam_rotation1.y -= ROTATION_SPEED;
-            }
-            NamedKey::Pause => {
-                panic!("Pause pressed. Process stopped");
-            }
+            // NamedKey::Space => {
+            //     // cam_pos1 += v_cam_up * MOVE_SPEED;
+            // }
+            // NamedKey::Control => {
+            //     cam_pos1 -= v_cam_up * MOVE_SPEED;
+            // }
+            // NamedKey::ArrowRight => {
+            //     cam_rotation1.x += ROTATION_SPEED;
+            // }
+            // NamedKey::ArrowLeft => {
+            //     cam_rotation1.x -= ROTATION_SPEED;
+            // }
+            // NamedKey::ArrowDown => {
+            //     cam_rotation1.y += ROTATION_SPEED;
+            // }
+            // NamedKey::ArrowUp => {
+            //     cam_rotation1.y -= ROTATION_SPEED;
+            // }
+            // NamedKey::Pause => {
+            //     panic!("Pause pressed. Process stopped");
+            // }
             NamedKey::F11 => match event.state {
                 ElementState::Pressed => {
                     dbg!();
