@@ -1,7 +1,10 @@
 use image::{self, io};
 use std::collections::{HashMap, HashSet};
 
-use crate::ecs::{Ecs, System, User};
+use crate::{
+    ecs::{Ecs, System, User},
+    movement_system::movement_func,
+};
 use cgmath::{self, vec3};
 use glium::{
     self, Texture2d, implement_vertex,
@@ -18,6 +21,8 @@ mod cube;
 mod hendle_cursour;
 mod keypress_handler;
 mod redraw_hendler;
+
+mod movement_system;
 #[derive(Debug, Copy, Clone)]
 struct UiVertex {
     position: [f32; 3],
@@ -52,17 +57,7 @@ impl Vertex {
     }
 }
 
-fn check(map: &mut HashMap<winit::keyboard::Key, bool>, key: winit::keyboard::Key) -> bool {
-    if !map.contains_key(&key) {
-        map.insert(key.clone(), false);
-        return false;
-    } else {
-        return map[&key];
-    }
-}
-
-const MOVE_SPEED: f32 = 0.5;
-
+/// <h1 style="color:red"> SHUT THE FUCK UUUUUUP </h1>
 fn main() {
     let (mut ecs, event_loop) = Ecs::new();
     let hello_system = System {
@@ -73,24 +68,7 @@ fn main() {
     };
     let movement_system = System {
         invoke_on: User::Update,
-        func: Box::new(|_, _, recourses, _| {
-            let p = &mut recourses.held_keys;
-
-            if check(p, Key::Named(NamedKey::Space)) {
-                let cam_up = vec3(
-                    recourses.thing.cam_up[0],
-                    recourses.thing.cam_up[1],
-                    recourses.thing.cam_up[2],
-                );
-                let cam_pos = vec3(
-                    recourses.thing.cam_pos[0],
-                    recourses.thing.cam_pos[1],
-                    recourses.thing.cam_pos[2],
-                );
-
-                recourses.thing.cam_pos = Into::<[f32; 3]>::into(cam_pos + cam_up * MOVE_SPEED);
-            }
-        }),
+        func: Box::new(movement_func),
     };
     let start_system = System {
         invoke_on: User::Startup,

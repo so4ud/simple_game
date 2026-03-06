@@ -56,9 +56,9 @@ pub fn handle_key_evnet(
             // NamedKey::ArrowUp => {
             //     cam_rotation1.y -= ROTATION_SPEED;
             // }
-            // NamedKey::Pause => {
-            //     panic!("Pause pressed. Process stopped");
-            // }
+            NamedKey::Pause => {
+                panic!("Pause pressed. Process stopped");
+            }
             NamedKey::F11 => match event.state {
                 ElementState::Pressed => {
                     dbg!();
@@ -84,25 +84,25 @@ pub fn handle_key_evnet(
             _ => {}
         },
         Key::Character(c) => match c.as_str() {
-            "w" => {
-                cam_pos1 += v_cam_direction * MOVE_SPEED;
-                match event.state {
-                    // TODO yes you can do dat lets make the thang yahoooo
-                    ElementState::Released => {
-                        // dbg!("released");
-                    }
-                    _ => (),
-                }
-            }
-            "s" => {
-                cam_pos1 -= v_cam_direction * MOVE_SPEED;
-            }
-            "a" => {
-                cam_pos1 += v_cam_direction.cross(v_cam_up).normalize() * MOVE_SPEED;
-            }
-            "d" => {
-                cam_pos1 -= v_cam_direction.cross(v_cam_up).normalize() * MOVE_SPEED;
-            }
+            // "w" => {
+            //     cam_pos1 += v_cam_direction * MOVE_SPEED;
+            //     match event.state {
+            //         // TODO yes you can do dat lets make the thang yahoooo
+            //         ElementState::Released => {
+            //             // dbg!("released");
+            //         }
+            //         _ => (),
+            //     }
+            // }
+            // "s" => {
+            //     cam_pos1 -= v_cam_direction * MOVE_SPEED;
+            // }
+            // "a" => {
+            //     cam_pos1 += v_cam_direction.cross(v_cam_up).normalize() * MOVE_SPEED;
+            // }
+            // "d" => {
+            //     cam_pos1 -= v_cam_direction.cross(v_cam_up).normalize() * MOVE_SPEED;
+            // }
             "m" => match event.state {
                 ElementState::Pressed => {
                     *mouse_mode = !*mouse_mode;
