@@ -61,7 +61,7 @@ pub fn handle_key_evnet(
             }
             NamedKey::F11 => match event.state {
                 ElementState::Pressed => {
-                    dbg!();
+                    // dbg!();
                     if *is_borderles == false {
                         window.set_decorations(false);
                         let _ = window.request_inner_size(PhysicalSize::new(1920, 1080));

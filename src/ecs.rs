@@ -1,4 +1,7 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    collections::{HashMap, VecDeque},
+    time::Instant,
+};
 
 use glium::{
     Display,
@@ -21,7 +24,7 @@ use crate::{
 };
 #[derive(Debug)]
 pub enum User {
-    Update,
+    Update(f32),
     Startup,
 }
 
@@ -30,6 +33,10 @@ pub enum User {
 
 // also maybe array of u128's if u128 isnt enought
 pub type SIGTYPE = u128;
+
+pub trait Component {
+    const SIGNATURE: SIGTYPE;
+}
 
 // struct SIGTYPE {
 //     inner: [u128; 4]
@@ -52,10 +59,12 @@ impl Ecs {
 
         let thing = Self::innit_thing(&display);
 
+        let last_updated = Instant::now();
         let entities = Entities { entities: vec![] };
         let components = Components {};
         let systems = Systems { systems: vec![] };
         let resources = Resources {
+            last_updated,
             event_emiter,
             window,
             held_keys,
@@ -241,12 +250,15 @@ impl ApplicationHandler<User> for Ecs {
     }
     fn about_to_wait(&mut self, event_loop: &event_loop::ActiveEventLoop) {
         if !self.resources.event_emiter.first {
-            self.resources.event_emiter.emmit(User::Update);
+            self.resources.event_emiter.emmit(User::Update(
+                (Instant::now() - self.resources.last_updated).as_secs_f32(),
+            ));
         } else {
             self.resources.event_emiter.emmit(User::Startup);
         }
         self.resources.event_emiter.first = false;
         self.resources.window.request_redraw();
+        self.resources.last_updated = Instant::now();
     }
 }
 
@@ -282,10 +294,10 @@ impl Systems {
         event: User,
     ) {
         match event {
-            User::Update => {
+            User::Update(_) => {
                 for i in &mut self.systems {
                     match i.invoke_on {
-                        User::Update => {
+                        User::Update(_) => {
                             i.invoke(entities, compoents, recources, &event);
                         }
                         _ => (),
@@ -325,6 +337,7 @@ impl System {
 
 pub struct Resources {
     // put resources here
+    pub last_updated: Instant,
     pub event_emiter: EventEmiter,
     pub window: Window,
     pub display: Display<WindowSurface>,

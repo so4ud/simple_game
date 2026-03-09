@@ -2,7 +2,7 @@ use image::{self, io};
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    ecs::{Ecs, System, User},
+    ecs::{Component, Components, Ecs, SIGTYPE, System, User},
     movement_system::movement_func,
 };
 use cgmath::{self, vec3};
@@ -61,13 +61,13 @@ impl Vertex {
 fn main() {
     let (mut ecs, event_loop) = Ecs::new();
     let hello_system = System {
-        invoke_on: User::Update,
+        invoke_on: User::Update(0.0),
         func: Box::new(|_, _, recourses, _| {
             recourses.thing.t += 0.1;
         }),
     };
     let movement_system = System {
-        invoke_on: User::Update,
+        invoke_on: User::Update(0.0),
         func: Box::new(movement_func),
     };
     let start_system = System {
@@ -80,4 +80,11 @@ fn main() {
     ecs.add_system(movement_system);
     ecs.add_system(hello_system);
     event_loop.run_app(&mut ecs).unwrap();
+}
+
+struct ColitionBox {
+    colsition_model: u32,
+}
+impl Component for ColitionBox {
+    const SIGNATURE: SIGTYPE = 1 << 1;
 }

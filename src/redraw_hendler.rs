@@ -101,7 +101,7 @@ pub fn render_scene(
         let aspect_ratio = height as f32 / width as f32;
 
         let fov: f32 = 90.0f32.to_radians();
-        let zfar = 1024.0;
+        let zfar = 1024.0 * 10.0;
         let znear = 0.1;
 
         let f = 1.0 / (fov / 2.0).tan();
@@ -172,7 +172,7 @@ pub fn render_scene(
         let aspect_ratio = height as f32 / width as f32;
 
         let fov: f32 = 90.0f32.to_radians();
-        let zfar = 1024.0;
+        let zfar = 1024.0 * 10.0;
         let znear = 0.1;
 
         let f = 1.0 / (fov / 2.0).tan();
@@ -218,7 +218,7 @@ pub fn render_scene(
         let aspect_ratio = height as f32 / width as f32;
 
         let fov: f32 = 90.0f32.to_radians();
-        let zfar = 1024.0;
+        let zfar = 1024.0 * 10.0;
         let znear = 0.1;
 
         let f = 1.0 / (fov / 2.0).tan();
